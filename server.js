@@ -2,7 +2,6 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 const { google } = require('googleapis');
-const path = require('path');
 require('dotenv').config(); // Importa o dotenv para usar variáveis de ambiente
 
 // Criação do servidor Express
@@ -17,17 +16,25 @@ app.use(cors({
   ],
   methods: ['GET', 'POST'],
   credentials: true
-})); // Permite o CORS
+}));
 app.use(bodyParser.json()); // Permite que o servidor entenda JSON no corpo da requisição
 
 // Configuração do Google Sheets API
+let privateKey;
+if (process.env.GOOGLE_PRIVATE_KEY) {
+  privateKey = process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n'); // Substitui os caracteres de nova linha
+} else {
+  console.error('A variável de ambiente GOOGLE_PRIVATE_KEY não foi definida.');
+  process.exit(1); // Encerra o servidor se a chave não estiver configurada
+}
+
 const sheets = google.sheets('v4');
 const auth = new google.auth.GoogleAuth({
   credentials: {
     type: process.env.GOOGLE_TYPE,
     project_id: process.env.GOOGLE_PROJECT_ID,
     private_key_id: process.env.GOOGLE_PRIVATE_KEY_ID,
-    private_key: process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n'), // Substitui os caracteres de nova linha no valor da variável
+    private_key: privateKey,
     client_email: process.env.GOOGLE_CLIENT_EMAIL,
     client_id: process.env.GOOGLE_CLIENT_ID,
     auth_uri: process.env.GOOGLE_AUTH_URI,
@@ -41,17 +48,20 @@ const auth = new google.auth.GoogleAuth({
 // ID da sua planilha (vindo de variáveis de ambiente)
 const spreadsheetId = process.env.GOOGLE_SHEET_ID;
 
+if (!spreadsheetId) {
+  console.error('A variável de ambiente GOOGLE_SHEET_ID não foi definida.');
+  process.exit(1); // Encerra o servidor se a ID da planilha não estiver configurada
+}
+
 // Endpoint para atualizar o Google Sheets
 app.post('/update-gs', async (req, res) => {
   const { playerName, cleanGs } = req.body;
 
-  // Verifica se os dados necessários foram enviados
   if (!playerName || !cleanGs) {
     return res.status(400).json({ success: false, message: 'Nome do jogador e GS são obrigatórios' });
   }
 
   try {
-    // Chama a função que vai atualizar o Google Sheets
     await updateGoogleSheet(playerName, cleanGs);
     res.json({ success: true });
   } catch (error) {
@@ -64,15 +74,13 @@ app.post('/update-gs', async (req, res) => {
 async function updateGoogleSheet(playerName, cleanGs) {
   try {
     const client = await auth.getClient();
-
-    // Chama a API do Google Sheets para atualizar a planilha
     const response = await sheets.spreadsheets.values.append({
       auth: client,
-      spreadsheetId: spreadsheetId, // Usando a variável correta
-      range: 'A2:B2', // A célula onde você quer inserir os dados
-      valueInputOption: 'RAW', // Formato do valor (RAW ou USER_ENTERED)
+      spreadsheetId,
+      range: 'A2:B2',
+      valueInputOption: 'RAW',
       requestBody: {
-        values: [[playerName, cleanGs]], // Dados a serem inseridos
+        values: [[playerName, cleanGs]],
       },
     });
 
@@ -85,7 +93,7 @@ async function updateGoogleSheet(playerName, cleanGs) {
 }
 
 // Inicia o servidor
-const PORT = process.env.PORT || 5000; // Porta vindo das variáveis de ambiente ou padrão 5000
+const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`Servidor rodando na porta ${PORT}`);
 });
