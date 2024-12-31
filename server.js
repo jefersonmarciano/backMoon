@@ -33,16 +33,16 @@ const privateKey = process.env.PRIVATE_KEY.replace(/\\n/g, '\n'); // Substitui a
 const sheets = google.sheets('v4');
 const auth = new google.auth.GoogleAuth({
   credentials: {
-    TYPE: process.env.TYPE,
-    PROJECT_ID: process.env.PROJECT_ID,
-    PRIVATE_KEY_ID: process.env.PRIVATE_KEY_ID,
-    PRIVATE_KEY: process.env.PRIVATE_KEY,
-    CLIENT_EMAIL: process.env.CLIENT_EMAIL,
-    CLIENT_ID: process.env.CLIENT_ID,
-    AUTH_URI: process.env.AUTH_URI,
-    TOKEN_URI: process.env.TOKEN_URI,
-    AUTH_PROVIDER_X509_CERT_URL: process.env.AUTH_PROVIDER_X509_CERT_URL,
-    CLIENT_X509_CERT_URL: process.env.CLIENT_X509_CERT_URL,
+    type: process.env.GOOGLE_TYPE,
+    project_id: process.env.GOOGLE_PROJECT_ID,
+    private_key_id: process.env.GOOGLE_PRIVATE_KEY_ID,
+    private_key: process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n'), // Substitui os caracteres de nova linha no valor da variável
+    client_email: process.env.GOOGLE_CLIENT_EMAIL,
+    client_id: process.env.GOOGLE_CLIENT_ID,
+    auth_uri: process.env.GOOGLE_AUTH_URI,
+    token_uri: process.env.GOOGLE_TOKEN_URI,
+    auth_provider_x509_cert_url: process.env.GOOGLE_AUTH_PROVIDER_CERT_URL,
+    client_x509_cert_url: process.env.GOOGLE_CLIENT_CERT_URL,
   },
   scopes: ['https://www.googleapis.com/auth/spreadsheets'], // Permissões necessárias
 });
