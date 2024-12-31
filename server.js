@@ -23,13 +23,12 @@ app.use(cors({
 app.use(bodyParser.json()); // Permite entender JSON no corpo da requisição
 
 // Configuração do Google Sheets API
-let privateKey;
-if (process.env.PRIVATE_KEY) {
-  privateKey = process.env.PRIVATE_KEY.replace(/\\n/g, '\n'); // Substitui as quebras de linha
-} else {
+if (!process.env.PRIVATE_KEY) {
   console.error('A variável de ambiente PRIVATE_KEY não foi definida.');
   process.exit(1); // Encerra o servidor se a chave não estiver configurada
 }
+
+const privateKey = process.env.PRIVATE_KEY.replace(/\\n/g, '\n'); // Substitui as quebras de linha
 
 const sheets = google.sheets('v4');
 const auth = new google.auth.GoogleAuth({
@@ -49,13 +48,12 @@ const auth = new google.auth.GoogleAuth({
 });
 
 // ID da sua planilha (vindo de variáveis de ambiente)
-const spreadsheetId = process.env.SPREADSHEET_ID;
-const rangeName = process.env.RANGE_NAME || 'A2:B2';
-
-if (!spreadsheetId) {
+if (!process.env.SPREADSHEET_ID) {
   console.error('A variável de ambiente SPREADSHEET_ID não foi definida.');
   process.exit(1); // Encerra o servidor se a ID da planilha não estiver configurada
 }
+const spreadsheetId = process.env.SPREADSHEET_ID;
+const rangeName = process.env.RANGE_NAME || 'A2:B2';
 
 // Endpoint para atualizar o Google Sheets
 app.post('/update-gs', async (req, res) => {
