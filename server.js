@@ -4,37 +4,37 @@ const cors = require('cors');
 const { google } = require('googleapis');
 require('dotenv').config(); // Importa o dotenv para usar variáveis de ambiente
 
-// Criação do servidor Express
-const app = express();
+// Validação das variáveis de ambiente
+const requiredEnvVars = [
+  'GOOGLE_TYPE',
+  'GOOGLE_PROJECT_ID',
+  'GOOGLE_PRIVATE_KEY_ID',
+  'GOOGLE_PRIVATE_KEY',
+  'GOOGLE_CLIENT_EMAIL',
+  'GOOGLE_CLIENT_ID',
+  'GOOGLE_AUTH_URI',
+  'GOOGLE_TOKEN_URI',
+  'GOOGLE_AUTH_PROVIDER_CERT_URL',
+  'GOOGLE_CLIENT_CERT_URL',
+  'GOOGLE_SHEET_ID',
+  'PORT',
+];
 
-// Configuração do middleware
-app.use(cors({
-  origin: [
-    'https://moonguild.vercel.app',
-    'https://moonguild-jefersonmarcianos-projects.vercel.app',
-    'https://moonguild-m06az0lhe-jefersonmarcianos-projects.vercel.app'
-  ],
-  methods: ['GET', 'POST'],
-  credentials: true
-}));
-app.use(bodyParser.json()); // Permite que o servidor entenda JSON no corpo da requisição
+requiredEnvVars.forEach((key) => {
+  if (!process.env[key]) {
+    console.error(`Erro: A variável de ambiente ${key} não foi definida.`);
+    process.exit(1);
+  }
+});
 
 // Configuração do Google Sheets API
-let privateKey;
-if (process.env.GOOGLE_PRIVATE_KEY) {
-  privateKey = process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n'); // Substitui os caracteres de nova linha
-} else {
-  console.error('A variável de ambiente GOOGLE_PRIVATE_KEY não foi definida.');
-  process.exit(1); // Encerra o servidor se a chave não estiver configurada
-}
-
 const sheets = google.sheets('v4');
 const auth = new google.auth.GoogleAuth({
   credentials: {
     type: process.env.GOOGLE_TYPE,
     project_id: process.env.GOOGLE_PROJECT_ID,
     private_key_id: process.env.GOOGLE_PRIVATE_KEY_ID,
-    private_key: privateKey,
+    private_key: process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n'),
     client_email: process.env.GOOGLE_CLIENT_EMAIL,
     client_id: process.env.GOOGLE_CLIENT_ID,
     auth_uri: process.env.GOOGLE_AUTH_URI,
@@ -42,23 +42,37 @@ const auth = new google.auth.GoogleAuth({
     auth_provider_x509_cert_url: process.env.GOOGLE_AUTH_PROVIDER_CERT_URL,
     client_x509_cert_url: process.env.GOOGLE_CLIENT_CERT_URL,
   },
-  scopes: ['https://www.googleapis.com/auth/spreadsheets'], // Permissões necessárias
+  scopes: ['https://www.googleapis.com/auth/spreadsheets'],
 });
 
-// ID da sua planilha (vindo de variáveis de ambiente)
+// ID da sua planilha
 const spreadsheetId = process.env.GOOGLE_SHEET_ID;
 
-if (!spreadsheetId) {
-  console.error('A variável de ambiente GOOGLE_SHEET_ID não foi definida.');
-  process.exit(1); // Encerra o servidor se a ID da planilha não estiver configurada
-}
+// Criação do servidor Express
+const app = express();
+
+// Configuração do middleware
+app.use(
+  cors({
+    origin: [
+      'https://moonguild.vercel.app',
+      'https://moonguild-jefersonmarcianos-projects.vercel.app',
+      'https://moonguild-m06az0lhe-jefersonmarcianos-projects.vercel.app',
+    ],
+    methods: ['GET', 'POST'],
+    credentials: true,
+  })
+);
+app.use(bodyParser.json());
 
 // Endpoint para atualizar o Google Sheets
 app.post('/update-gs', async (req, res) => {
   const { playerName, cleanGs } = req.body;
 
   if (!playerName || !cleanGs) {
-    return res.status(400).json({ success: false, message: 'Nome do jogador e GS são obrigatórios' });
+    return res
+      .status(400)
+      .json({ success: false, message: 'Nome do jogador e GS são obrigatórios' });
   }
 
   try {
@@ -66,7 +80,9 @@ app.post('/update-gs', async (req, res) => {
     res.json({ success: true });
   } catch (error) {
     console.error('Erro ao atualizar o GS:', error);
-    res.status(500).json({ success: false, message: 'Erro ao processar a requisição' });
+    res
+      .status(500)
+      .json({ success: false, message: 'Erro ao processar a requisição' });
   }
 });
 
