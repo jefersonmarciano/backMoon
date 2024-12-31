@@ -3,6 +3,7 @@ const bodyParser = require('body-parser');
 const cors = require('cors');
 const { google } = require('googleapis');
 
+// Carregar variáveis de ambiente (apenas em ambiente local)
 if (process.env.NODE_ENV !== 'production') {
   require('dotenv').config(); // Carrega variáveis de ambiente em desenvolvimento
 }
@@ -22,36 +23,45 @@ app.use(cors({
 }));
 app.use(bodyParser.json()); // Permite entender JSON no corpo da requisição
 
-// Configuração do Google Sheets API
+// Verificar se as variáveis de ambiente estão definidas
 if (!process.env.PRIVATE_KEY) {
   console.error('A variável de ambiente PRIVATE_KEY não foi definida.');
   process.exit(1); // Encerra o servidor se a chave não estiver configurada
 }
 
-const privateKey = process.env.PRIVATE_KEY.replace(/\\n/g, '\n'); // Substitui as quebras de linha
+if (!process.env.SPREADSHEET_ID) {
+  console.error('A variável de ambiente SPREADSHEET_ID não foi definida.');
+  process.exit(1); // Encerra o servidor se a ID da planilha não estiver configurada
+}
+
+// A função abaixo trata a chave privada, removendo possíveis quebras de linha extras
+const privateKey = process.env.PRIVATE_KEY ? process.env.PRIVATE_KEY.replace(/\\n/g, '\n') : null;
+
+if (!privateKey) {
+  console.error('A chave privada não foi definida corretamente.');
+  process.exit(1); // Encerra o servidor se a chave privada estiver ausente ou incorreta
+}
 
 const sheets = google.sheets('v4');
+
+// Configuração de autenticação com a API do Google Sheets
 const auth = new google.auth.GoogleAuth({
   credentials: {
-    type: process.env.GOOGLE_TYPE,
-    project_id: process.env.GOOGLE_PROJECT_ID,
-    private_key_id: process.env.GOOGLE_PRIVATE_KEY_ID,
-    private_key: process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n'), // Substitui os caracteres de nova linha no valor da variável
-    client_email: process.env.GOOGLE_CLIENT_EMAIL,
-    client_id: process.env.GOOGLE_CLIENT_ID,
-    auth_uri: process.env.GOOGLE_AUTH_URI,
-    token_uri: process.env.GOOGLE_TOKEN_URI,
-    auth_provider_x509_cert_url: process.env.GOOGLE_AUTH_PROVIDER_CERT_URL,
-    client_x509_cert_url: process.env.GOOGLE_CLIENT_CERT_URL,
+    type: process.env.TYPE || 'service_account',
+    project_id: process.env.PROJECT_ID || 'gs-moon',
+    private_key_id: process.env.PRIVATE_KEY_ID,
+    private_key: privateKey,
+    client_email: process.env.CLIENT_EMAIL,
+    client_id: process.env.CLIENT_ID,
+    auth_uri: process.env.AUTH_URI,
+    token_uri: process.env.TOKEN_URI,
+    auth_provider_x509_cert_url: process.env.AUTH_PROVIDER_X509_CERT_URL,
+    client_x509_cert_url: process.env.CLIENT_X509_CERT_URL,
   },
   scopes: ['https://www.googleapis.com/auth/spreadsheets'], // Permissões necessárias
 });
 
 // ID da sua planilha (vindo de variáveis de ambiente)
-if (!process.env.SPREADSHEET_ID) {
-  console.error('A variável de ambiente SPREADSHEET_ID não foi definida.');
-  process.exit(1); // Encerra o servidor se a ID da planilha não estiver configurada
-}
 const spreadsheetId = process.env.SPREADSHEET_ID;
 const rangeName = process.env.RANGE_NAME || 'A2:B2';
 
