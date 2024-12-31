@@ -65,6 +65,8 @@ const rangeName = process.env.RANGE_NAME || 'A2:B2';
 
 // Endpoint para atualizar o Google Sheets
 app.post('/update-gs', async (req, res) => {
+  console.log('Request Body:', req.body); // Log para depuração
+
   const { playerName, cleanGs } = req.body;
 
   if (!playerName || !cleanGs) {
@@ -75,7 +77,7 @@ app.post('/update-gs', async (req, res) => {
     await updateGoogleSheet(playerName, cleanGs);
     res.json({ success: true, message: 'Dados atualizados com sucesso!' });
   } catch (error) {
-    console.error('Erro ao atualizar o GS:', error);
+    console.error('Erro ao atualizar o GS:', error); // Log do erro
     res.status(500).json({ success: false, message: 'Erro ao processar a requisição.' });
   }
 });
