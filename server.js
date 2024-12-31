@@ -29,10 +29,8 @@ if (!process.env.PRIVATE_KEY) {
   process.exit(1); // Encerra o servidor se a chave não estiver configurada
 }
 
-if (!process.env.SPREADSHEET_ID) {
-  console.error('A variável de ambiente SPREADSHEET_ID não foi definida.');
-  process.exit(1); // Encerra o servidor se a ID da planilha não estiver configurada
-}
+// Log para depuração
+console.log('PRIVATE_KEY carregada:', process.env.PRIVATE_KEY);
 
 // A função abaixo trata a chave privada, removendo possíveis quebras de linha extras
 const privateKey = process.env.PRIVATE_KEY ? process.env.PRIVATE_KEY.replace(/\\n/g, '\n') : null;
